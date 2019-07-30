@@ -1,0 +1,44 @@
+﻿@using Typecasting
+@using System.Threading.Tasks;
+@using Newtonsoft.Json;
+
+@inherits Base;
+
+<input id="gencomp" type="text" />
+
+
+
+@code {
+
+    [Parameter]
+    public EventCallback<ChangeEventArgs> ValueChange
+    {
+        get { return (EventCallback<ChangeEventArgs>)this.GetEvent("change"); }
+        set { this.SetEvent<ChangeEventArgs>("change", value); }
+    }
+
+    [Parameter]
+    public EventCallback<FocusOutEventArgs> FocusOut
+    {
+        get { return (EventCallback<FocusOutEventArgs>)this.GetEvent("blur"); }
+        set { this.SetEvent<FocusOutEventArgs>("blur", value); }
+    }
+
+    public async Task<string> DummyCall()
+    {
+        // dummy async action method to show case the issue
+        return await Task.Run(() => { return "data"; });
+    }
+
+    [JSInvokable]
+    public object Trigger(string eventName, string arg)
+    {
+
+        EventData data = this.DelegateList[eventName];
+        var eventarg = JsonConvert.DeserializeObject(arg, data.ArgumentType);
+        dynamic fn = data.Handler;
+        fn.InvokeAsync(eventarg);
+        return eventarg;
+    }    
+
+}
